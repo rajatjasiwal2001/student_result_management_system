@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Result List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    *{box-sizing:border-box;}
+    body {
+      margin:0;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      background: #0f111a;
+      color: #e8ecf8;
+      min-height:100vh;
+      position:relative;
+      overflow:hidden;
+    }
+    #bg-canvas {
+      position:fixed;
+      inset:0;
+      z-index:0;
+    }
+    .overlay {
+      position:fixed;
+      inset:0;
+      background: linear-gradient(135deg, rgba(37,117,252,0.2), rgba(106,17,203,0.2));
+      mix-blend-mode: overlay;
+      z-index:1;
+    }
+    .emoji-layer {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+    .container {
+      position: relative;
+      z-index:2;
+      padding-top: 60px;
+      padding-bottom: 60px;
+    }
+    h2 {
+      color: #fff;
+    }
+    .table-wrapper {
+      background: rgba(255,255,255,0.05);
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 30px 60px -10px rgba(37,117,252,0.3);
+      backdrop-filter: blur(6px);
+      position: relative;
+      overflow: hidden;
+    }
+    .table thead {
+      background: rgba(37,117,252,0.9);
+      color: #fff;
+    }
+    .table tbody tr {
+      transition: transform .2s ease, background .2s ease;
+    }
+    .table tbody tr:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-2px);
+    }
+    .btn-edit {
+      background-color: #ffc107;
+      color: #1f1f1f;
+      border:none;
+      box-shadow: 0 6px 16px rgba(255,193,7,0.4);
+    }
+    .btn-delete {
+      background-color: #dc3545;
+      color: #fff;
+      border:none;
+      box-shadow: 0 6px 16px rgba(220,53,69,0.4);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      border:none;
+    }
+    .badge-pass {
+      background: #28a745;
+      color:#fff;
+      border-radius:6px;
+      padding:4px 8px;
+      font-size:12px;
+    }
+    .badge-fail {
+      background: #e55353;
+      color:#fff;
+      border-radius:6px;
+      padding:4px 8px;
+      font-size:12px;
+    }
+    .small-link {
+      color:#fff;
+    }
+    .float-emoji {
+      position: fixed;
+      pointer-events: none;
+      font-size: 20px;
+      will-change: transform, opacity;
+      user-select: none;
+      opacity: 0;
+      animation: rise 6s linear forwards;
+      z-index: 1;
+    }
+    @keyframes rise {
+      0% { transform: translateY(0) scale(1); opacity:1; }
+      100% { transform: translateY(-140px) scale(1.2); opacity:0; }
+    }
+
+    @media (max-width: 768px){
+      .table thead { display:none; }
+      .table tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border:1px solid rgba(255,255,255,0.08);
+        border-radius:8px;
+        padding:12px;
+      }
+      .table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding:6px 8px;
+        position: relative;
+      }
+      .table tbody td::before {
+        content: attr(data-label);
+        font-weight:600;
+        flex:1 0 40%;
+        color:#b0b8e0;
+      }
+      .actions-mobile {
+        margin-top:8px;
+        display:flex;
+        gap:6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+  <div class="overlay"></div>
+  <div class="emoji-layer" id="emoji-layer"></div>
+
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2>📊 All Students' Results</h2>
+      <p class="text-muted">Live responsive dashboard with tech & student energy.</p>
+    </div>
+
+    <div class="table-wrapper mb-4">
+      {% if data %}
+      <div class="table-responsive">
+        <table class="table table-borderless align-middle text-center mb-0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Subject</th>
+              <th>Marks</th>
+              <th>Result</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data %}
+            <tr>
+              <td data-label="ID">{{ row[0] }}</td>
+              <td data-label="Name">{{ row[1] }}</td>
+              <td data-label="Subject">{{ row[2] }}</td>
+              <td data-label="Marks">{{ row[3] }}</td>
+              <td data-label="Result">
+                {% if row[3]|int >= 33 %}
+                  <span class="badge-pass">Pass</span>
+                {% else %}
+                  <span class="badge-fail">Fail</span>
+                {% endif %}
+              </td>
+              <td data-label="Action">
+                <div class="d-flex justify-content-center flex-wrap gap-2">
+                  <a href="/update_student/id={{ row[0] }}" class="btn btn-sm btn-edit">✏️ Edit</a>
+                  <a href="/delete/id={{ row[0] }}" class="btn btn-sm btn-delete">🗑️ Delete</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-center text-light">No results found.</p>
+      {% endif %}
+    </div>
+
+    <div class="text-center">
+      <a href="/" class="btn btn-primary">➕ Add New Student</a>
+    </div>
+  </div>
+
+  <!-- Particle/Network Background Script -->
+  <script>
+    const canvas = document.getElementById("bg-canvas");
+    const ctx = canvas.getContext("2d");
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    let nodes = [];
+    const NODE_COUNT = Math.floor((w * h) / 20000);
+
+    class Node {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * w;
+        this.y = Math.random() * h;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.r = Math.random() * 2 + 1;
+        this.alpha = Math.random() * 0.5 + 0.2;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < -20 || this.x > w + 20) this.x = Math.random() * w;
+        if (this.y < -20 || this.y > h + 20) this.y = Math.random() * h;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(100,150,255,${this.alpha})`;
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function initNodes() {
+      nodes = [];
+      for (let i = 0; i < NODE_COUNT; i++) nodes.push(new Node());
+    }
+
+    function connect() {
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 120) {
+            ctx.strokeStyle = `rgba(100,150,255,${0.08 * (1 - dist / 120)})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0,0,w,h);
+      nodes.forEach(n => {
+        n.update();
+        n.draw();
+      });
+      connect();
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+      initNodes();
+    });
+
+    initNodes();
+    animate();
+  </script>
+
+  <!-- Floating student emojis -->
+  <script>
+    const emojiLayer = document.getElementById("emoji-layer");
+    const icons = ["🎓","📚","✏️","📝","📖"];
+    function spawnEmoji() {
+      const el = document.createElement("div");
+      el.className = "float-emoji";
+      el.textContent = icons[Math.floor(Math.random() * icons.length)];
+      const size = Math.random() * 24 + 16;
+      el.style.fontSize = size + "px";
+      el.style.left = Math.random() * window.innerWidth + "px";
+      el.style.top = (window.innerHeight + 10) + "px";
+      emojiLayer.appendChild(el);
+      // force reflow to restart animation if reused
+      requestAnimationFrame(() => {
+        el.style.opacity = 1;
+      });
+      setTimeout(() => {
+        el.remove();
+      }, 6000);
+    }
+
+    setInterval(spawnEmoji, 700);
+    // burst on load
+    for (let i=0;i<10;i++) setTimeout(spawnEmoji, i*150);
+  </script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

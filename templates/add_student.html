@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add Student Record</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      background: linear-gradient(135deg, #1f2a44 0%, #3f5f99 70%);
+      overflow: hidden;
+      color: #fff;
+    }
+
+    #particle-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .emoji-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .card-wrapper {
+      position: relative;
+      z-index: 2;
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .card {
+      position: relative;
+      background: rgba(255,255,255,0.95);
+      border: none;
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 30px 60px -10px rgba(0,0,0,0.35), 0 10px 30px rgba(37,117,252,0.25);
+      overflow: hidden;
+      transition: transform .3s ease;
+    }
+    .card:hover { transform: translateY(-3px); }
+
+    h3 {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .sub {
+      font-size: .9rem;
+      color: #555;
+      margin-bottom: 1rem;
+    }
+
+    .form-control {
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: .95rem;
+      transition: box-shadow .25s ease;
+    }
+    .form-control:focus {
+      box-shadow: 0 0 12px rgba(37,117,252,0.5);
+      border-color: #2575fc;
+      outline: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      border: none;
+      padding: .75rem;
+      font-weight: 600;
+      border-radius: 8px;
+      letter-spacing: .5px;
+      color: #fff;
+      transition: filter .2s;
+    }
+    .btn-primary:hover {
+      filter: brightness(1.05);
+    }
+
+    .small-link {
+      font-size: .9rem;
+      color: #2575fc;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .small-link:hover {
+      text-decoration: underline;
+    }
+
+    /* floating icon style (for JS-created elements) */
+    .float-icon {
+      position: fixed;
+      pointer-events: none;
+      font-size: 20px;
+      will-change: transform, opacity;
+      user-select: none;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="particle-canvas"></canvas>
+  <div class="emoji-bg" id="emoji-bg"></div>
+
+  <div class="card-wrapper">
+    <div class="card">
+      <h3 class="text-center">🎓 Add Student Record</h3>
+      <p class="text-center sub">Smart result manager — fast, clean & student-first</p>
+      <form method="POST" action="/add_student" novalidate>
+        <div class="mb-3">
+          <label class="form-label">Student ID</label>
+          <input type="text" name="id" class="form-control" placeholder="e.g. 101" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Student Name</label>
+          <input type="text" name="name" class="form-control" placeholder="John Doe" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Subject</label>
+          <input type="text" name="subject" class="form-control" placeholder="Mathematics" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Marks</label>
+          <input type="number" name="marks" class="form-control" placeholder="0 - 100" required min="0" max="100" />
+        </div>
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">💾 Save</button>
+        </div>
+      </form>
+      <div class="text-center mt-3">
+        <a href="/result_list" class="small-link">📋 View Result List</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Particle background (tech-style) -->
+  <script>
+    const canvas = document.getElementById("particle-canvas");
+    const ctx = canvas.getContext("2d");
+    let W = canvas.width = window.innerWidth;
+    let H = canvas.height = window.innerHeight;
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * W;
+        this.y = Math.random() * H;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.r = Math.random() * 2 + 1;
+        this.alpha = Math.random() * 0.5 + 0.2;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < -10 || this.x > W + 10) this.x = Math.random() * W;
+        if (this.y < -10 || this.y > H + 10) this.y = Math.random() * H;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    const particles = [];
+    const PARTICLE_NUM = Math.floor((W * H) / 18000);
+    for (let i = 0; i < PARTICLE_NUM; i++) particles.push(new Particle());
+
+    function connect() {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const d = Math.hypot(dx, dy);
+          if (d < 120) {
+            ctx.strokeStyle = `rgba(100,180,255,${0.08 * (1 - d / 120)})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      connect();
+      requestAnimationFrame(animateParticles);
+    }
+
+    window.addEventListener("resize", () => {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      particles.length = 0;
+      for (let i = 0; i < Math.floor((W * H) / 18000); i++) particles.push(new Particle());
+    });
+
+    animateParticles();
+  </script>
+
+  <!-- Student-related floating emoji background -->
+  <script>
+    const emojiContainer = document.getElementById("emoji-bg");
+    const icons = ["🎓","📚","✏️","📝","📖"];
+    function createEmoji() {
+      const el = document.createElement("div");
+      el.className = "float-icon";
+      el.textContent = icons[Math.floor(Math.random() * icons.length)];
+      const size = Math.random() * 28 + 18;
+      el.style.fontSize = size + "px";
+      el.style.left = Math.random() * window.innerWidth + "px";
+      el.style.top = window.innerHeight + "px";
+      el.style.opacity = (Math.random() * 0.5 + 0.3);
+      document.body.appendChild(el);
+
+      const duration = Math.random() * 6000 + 5000; // 5-11s
+      const drift = (Math.random() - 0.5) * 100; // sideways
+
+      const start = performance.now();
+      function float(time) {
+        const t = (time - start) / duration;
+        if (t >= 1) {
+          el.remove();
+          return;
+        }
+        el.style.transform = `translate(${drift * t}px, ${-window.innerHeight * t - 20}px) rotate(${t * 20}deg)`;
+        el.style.opacity = `${1 - t}`;
+        requestAnimationFrame(float);
+      }
+      requestAnimationFrame(float);
+    }
+
+    // spawn periodically
+    setInterval(createEmoji, 700);
+    // also spawn some on load
+    for (let i = 0; i < 8; i++) setTimeout(createEmoji, i * 300);
+  </script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
